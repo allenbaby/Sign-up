@@ -3,6 +3,7 @@ import "./App.css";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import useStore from "./store";
 
 const images = [
   "https://media.istockphoto.com/id/519760984/photo/starry-night.jpg?s=612x612&w=0&k=20&c=ppXohmOnNvW1z2P2ZX1CUhAOYEoGaxWr6Ha5jtdUD0Y=",
@@ -11,74 +12,38 @@ const images = [
 ];
 
 function AuthPage() {
+  const { baseURL } = useStore();
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLogin, setIsLogin] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // Carousel Effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 5000); // Change image every 5 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleSignup = async () => {
-    setLoading(true);
-    const userData = {
-      first_name: document.querySelector('input[placeholder="First name"]')?.value,
-      last_name: document.querySelector('input[placeholder="Last name"]')?.value,
-      email: document.querySelector('input[placeholder="Email"]')?.value,
-      password: document.querySelector('input[placeholder="Enter your password"]')?.value,
-      role: "customer",
-    };
-
-    try {
-      const response = await axios.post(
-        "https://2897-47-147-135-27.ngrok-free.app/api/users/signup/",
-        userData,
-        {
-          headers: { "Content-Type": "application/json" },
-          timeout: 10000, // 10 seconds
-        },
-      );
-
-      alert(`Response Code: ${response.status} - ${response.data.message}`);
-    } catch (error) {
-      if (error.response) {
-        alert(`Error: ${error.response.status} - ${error.response.data.message}`);
-      } else {
-        alert("Error: Could not connect to the server.");
-      }
-    }
-
-    setLoading(false);
-  };
-
+  // Handle login function
   const handleLogin = async () => {
     setLoading(true);
-    const userData = {
-      email: document.querySelector('input[placeholder="Email"]')?.value,
-      password: document.querySelector('input[placeholder="Enter your password"]')?.value,
+    const loginPayload = {
+      email: document.querySelector('#inputEmail')?.value,
+      password: document.querySelector('#inputPassword')?.value,
     };
+
     try {
       const response = await axios.post(
-        "https://2897-47-147-135-27.ngrok-free.app/api/users/login/",
-        userData,
+        `${baseURL}/api/users/login/`,
+        loginPayload,
         {
           headers: { "Content-Type": "application/json" },
+          withCredentials: true,
           timeout: 10000, // 10 seconds
-        },
+        }
       );
-      console.log(response.data)
+      console.log(response.data);
+
       alert(`Response Code: ${response.status} - ${response.data}`);
-      response.status == 200 && setTimeout(() => {
-        navigate("/home");
-      }, 2000); // Simulating preloader
+      response.status === 200 &&
+        setTimeout(() => {
+          navigate("/home",); // Pass name as route state
+        }, 2000); // Simulating preloader
     } catch (error) {
       if (error.response) {
         alert(`Error: ${error.response.status} - ${error.response.data}`);
@@ -86,6 +51,49 @@ function AuthPage() {
         alert("Error: Could not connect to the server.");
       }
     }
+    setLoading(false);
+  };
+
+  const handleSignup = async () => {
+    setLoading(true);
+    const singupPayload = {
+      email: document.querySelector('#inputEmail')?.value,
+      password: document.querySelector('#inputPassword')?.value,
+      first_name: document.querySelector('#inputFirstName')?.value,
+      last_name: document.querySelector('#inputLastName')?.value,
+      role: "customer",
+    };
+
+    try {
+      const response = await axios.post(
+        `${baseURL}/api/users/signup/`,
+        singupPayload,
+        {
+          headers: { "Content-Type": "application/json" },
+          timeout: 10000, // 10 seconds
+        }
+      );
+      console.log(response.data);
+
+      // // Assuming the API response contains the user data including the name
+      // const { first_name } = response.data.user;
+
+      // // Set the user name in state
+      // setUserName(first_name);
+
+      alert(`Response Code: ${response.status} - ${response.data}`);
+      response.status === 200 &&
+        setTimeout(() => {
+          setIsLogin(!isLogin)
+        }, 1000); // Simulating preloader
+    } catch (error) {
+      if (error.response) {
+        alert(`Error: ${error.response.status} - ${error.response.data}`);
+      } else {
+        alert("Error: Could not connect to the server.");
+      }
+    }
+    setLoading(false);
   };
 
   return (
@@ -118,14 +126,14 @@ function AuthPage() {
           <div className="form-group">
             {!isLogin && (
               <>
-                <input type="text" placeholder="First name" />
-                <input type="text" placeholder="Last name" />
+                <input type="text" id="inputFirstName" placeholder="First name" />
+                <input type="text" id="inputLastName" placeholder="Last name" />
               </>
             )}
           </div>
-          <input type="email" placeholder="Email" />
+          <input type="email" id="inputEmail" placeholder="Email" />
           <div className="password-field">
-            <input type={showPassword ? "text" : "password"} placeholder="Enter your password" />
+            <input id="inputPassword" type={showPassword ? "text" : "password"} placeholder="Enter your password" />
             <button onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
